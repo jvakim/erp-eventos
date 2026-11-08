@@ -1,0 +1,19 @@
+# Repositório público: só o código vai para o GitHub.
+# Plano, decisões, relatórios e material de aprendizado ficam só nesta máquina.
+/*.md
+!/README.md
+/docs/
+/.claude/
+/scripts/plano.sh
+/exercicios/
+
+# Dependências e saídas geradas
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Segredos e configurações locais
+.env
+.env.*
+!.env.example

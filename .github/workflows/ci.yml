@@ -1,0 +1,48 @@
+# CI: roda a cada push na main e em todo pull request.
+# A proteção da main exige que o job "verificar" termine verde para permitir o merge.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      # Instala a versão do pnpm declarada em "packageManager" no package.json.
+      - name: Instalar o pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Instalar o Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      # --frozen-lockfile: falha se o pnpm-lock.yaml não bater com o package.json.
+      - name: Instalar as dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tipos (tsc --noEmit)
+        run: pnpm typecheck
+
+      - name: Testes em UTC
+        run: pnpm test
+        env:
+          TZ: UTC
+
+      - name: Testes em America/Sao_Paulo
+        run: pnpm test
+        env:
+          TZ: America/Sao_Paulo

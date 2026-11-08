@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    // Modo estrito: o compilador recusa o que poderia dar errado em tempo de execução.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Quem executa o código é o Vitest (via Vite); o tsc só confere os tipos.
+    "target": "es2024",
+    "lib": ["es2024"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["src", "exercicios", "*.config.ts"]
+}
