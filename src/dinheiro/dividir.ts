@@ -61,3 +61,29 @@ export function dividir(total: Centavos, percentuais: readonly Percentual[]): Ce
 
   return dividirPorPesos(total, pesos);
 }
+
+// Divide `total` em `n` parcelas pela R1: é o dividirPorPesos com todos os pesos iguais a 1.
+// Parcelas iguais, e a última recebe o resto (R$ 400,01 em 3: 133,33; 133,33; 133,35).
+// Negativo é o espelho do positivo.
+// `n` que não seja inteiro maior ou igual a 1: 'PARCELAS_INVALIDAS'.
+// |total| menor que `n` (alguma parcela sairia zero): 'TOTAL_MENOR_QUE_PARCELAS'.
+export function parcelar(total: Centavos, n: number): Centavos[] {
+  // Valida o `n` antes de montar a lista: Array(1.5) e Array(-1) lançariam um RangeError do JS,
+  // e não o nosso ErroValidacao. O isSafeInteger recusa fração, NaN e infinito de uma vez.
+  if (!Number.isSafeInteger(n) || n < 1) {
+    throw new ErroValidacao(`número de parcelas inválido: ${String(n)}`, 'PARCELAS_INVALIDAS');
+  }
+  // O limite vale para o valor absoluto: −R$ 400,01 em 3 é válido; −R$ 0,02 em 3 não é.
+  if (Math.abs(total) < n) {
+    throw new ErroValidacao(
+      `total menor que o número de parcelas: ${String(total)} centavos em ${String(n)}`,
+      'TOTAL_MENOR_QUE_PARCELAS',
+    );
+  }
+
+  // Parcelas iguais são pesos iguais: [1, 1, 1] (o [1] * n do Python). Sem percentual no caminho,
+  // porque 100% ÷ 3 é dízima e nunca fecharia em 100%. A R1, o espelho e o bigint vêm do
+  // dividirPorPesos.
+  const pesos = Array<number>(n).fill(1);
+  return dividirPorPesos(total, pesos);
+}

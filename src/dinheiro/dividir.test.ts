@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ErroValidacao } from '../erros';
 import { centavos } from './centavos';
-import { dividir, dividirPorPesos } from './dividir';
+import { dividir, dividirPorPesos, parcelar } from './dividir';
 import { pct } from './percentual';
 
 // R1: cada parte, menos a última, é truncada no centavo; a última recebe o resto.
@@ -101,6 +101,57 @@ describe('dividir', () => {
     expect(() => dividir(centavos(100001), percentuais)).toThrow(ErroValidacao);
     expect(() => dividir(centavos(100001), percentuais)).toThrow(
       expect.objectContaining({ codigo: 'PERCENTUAIS_NAO_FECHAM' }),
+    );
+  });
+});
+
+describe('parcelar', () => {
+  it('T-0.2-02: parcelar(R$ 600,00; 3)', () => {
+    expect(parcelar(centavos(60000), 3)).toEqual([20000, 20000, 20000]);
+  });
+
+  it('T-0.2-03: parcelar(R$ 400,01; 3)', () => {
+    expect(parcelar(centavos(40001), 3)).toEqual([13333, 13333, 13335]);
+  });
+
+  it('T-0.2-04: parcelar(R$ 1.000,01; 3)', () => {
+    expect(parcelar(centavos(100001), 3)).toEqual([33333, 33333, 33335]);
+  });
+
+  it('T-0.2-04: uma parcela só fica com o total', () => {
+    expect(parcelar(centavos(100001), 1)).toEqual([100001]);
+  });
+
+  it('T-0.2-04: total igual ao número de parcelas dá um centavo em cada', () => {
+    expect(parcelar(centavos(3), 3)).toEqual([1, 1, 1]);
+  });
+
+  // Decisão do 0.2: parcelar segue a mesma R1, com o mesmo espelho dos negativos.
+  it('T-0.2-04: negativo é o espelho do positivo', () => {
+    expect(parcelar(centavos(-40001), 3)).toEqual([-13333, -13333, -13335]);
+  });
+
+  it.each([
+    [2, 'R$ 0,02 em 3'],
+    [0, 'total zero'],
+    [-2, '−R$ 0,02 em 3 (o limite vale para o valor absoluto)'],
+  ])('T-0.2-08: parcelar(%i centavos, 3) gera erro de total menor que as parcelas (%s)', (total) => {
+    expect(() => parcelar(centavos(total), 3)).toThrow(ErroValidacao);
+    expect(() => parcelar(centavos(total), 3)).toThrow(
+      expect.objectContaining({ codigo: 'TOTAL_MENOR_QUE_PARCELAS' }),
+    );
+  });
+
+  it.each([
+    [0, 'zero parcelas'],
+    [-1, 'parcelas negativas'],
+    [1.5, 'parcela fracionária'],
+    [Number.NaN, 'NaN'],
+    [Number.POSITIVE_INFINITY, 'infinito'],
+  ])('T-0.2-08: parcelar(R$ 10,00; %s) gera erro de número de parcelas (%s)', (n) => {
+    expect(() => parcelar(centavos(1000), n)).toThrow(ErroValidacao);
+    expect(() => parcelar(centavos(1000), n)).toThrow(
+      expect.objectContaining({ codigo: 'PARCELAS_INVALIDAS' }),
     );
   });
 });
