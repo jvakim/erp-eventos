@@ -75,6 +75,12 @@ describe('dividir', () => {
     expect(dividir(centavos(-100001), [pct('60'), pct('40')])).toEqual([-60000, -40001]);
   });
 
+  // Contraexemplo da T-0.2-P4 (fast-check, seed 1046557815, reduzido a [0, [100%]]):
+  // dividir(−0) devolvia [−0], porque a última parte é total − 0 = −0 − 0 = −0.
+  it('T-0.2-P4: dividir do total −0 dá 0, não −0', () => {
+    expect(dividir(centavos(-0), [pct('100')])).toEqual([0]);
+  });
+
   it('T-0.2-06: o espelho normaliza −0 para 0', () => {
     expect(dividir(centavos(-1), [pct('50'), pct('50')])).toEqual([0, -1]);
   });

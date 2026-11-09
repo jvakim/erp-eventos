@@ -14,6 +14,12 @@ describe('centavos', () => {
     expect(centavos(-LIMITE)).toBe(-LIMITE);
   });
 
+  // Contraexemplo da T-0.2-P4 (fast-check, seed 1046557815): com t = 0, `-t` é −0, e o
+  // centavos() deixava passar. Nenhum Centavos pode ser −0 (o toBe usa Object.is).
+  it('T-0.2-P4: centavos(−0) devolve 0', () => {
+    expect(centavos(-0)).toBe(0);
+  });
+
   // Antes do 0.2, formatarReais(150.5) devolvia "R$ NaN" em silêncio (pendência do 0.1).
   it.each([
     [150.5, 'fração de centavo'],

@@ -11,11 +11,14 @@ const LIMITE_SEGURO = BigInt(Number.MAX_SAFE_INTEGER); // 2^53 − 1
 
 // Única porta de entrada para criar Centavos: confere `Number.isSafeInteger`.
 // O `as` é seguro porque a conferência vem logo antes (construtor inteligente).
+// Também transforma −0 em 0, então nenhum Centavos do sistema é −0. O −0 aparece sem aviso:
+// `-t` com t = 0 é −0, e −0 − 0 continua −0 (contraexemplo da T-0.2-P4). O `=== 0` pega os
+// dois zeros, porque −0 === 0 é true; já `valor < 0` não pegaria, porque −0 < 0 é false.
 export function centavos(valor: number): Centavos {
   if (!Number.isSafeInteger(valor)) {
     throw new ErroValidacao(`centavos inválidos: ${String(valor)}`, 'CENTAVOS_INVALIDOS');
   }
-  return valor as Centavos;
+  return (valor === 0 ? 0 : valor) as Centavos;
 }
 
 // Converte o `int8` do banco (que chega como bigint) para Centavos, sem perder precisão.
