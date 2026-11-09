@@ -1,0 +1,106 @@
+import { describe, expect, it } from 'vitest';
+import { ErroValidacao } from '../erros';
+import { centavos } from './centavos';
+import { dividir, dividirPorPesos } from './dividir';
+import { pct } from './percentual';
+
+// R1: cada parte, menos a última, é truncada no centavo; a última recebe o resto.
+// O `toEqual` compara as listas item a item com Object.is, então também pega um −0.
+
+describe('dividirPorPesos', () => {
+  it('T-0.2-12: divide R$ 15.000,00 pelas listas 9.800 e 6.750', () => {
+    // 1.500.000 × 9.800 ÷ 16.550 = 888.217,52… → trunca em 888.217; a última fica com o resto.
+    expect(dividirPorPesos(centavos(1500000), [9800, 6750])).toEqual([888217, 611783]);
+  });
+
+  it('T-0.2-12: a ordem das partes muda os centavos: a última recebe o resto', () => {
+    expect(dividirPorPesos(centavos(1), [1, 1])).toEqual([0, 1]);
+    expect(dividirPorPesos(centavos(100), [1, 1, 1])).toEqual([33, 33, 34]);
+  });
+
+  it('T-0.2-12: peso zero recebe zero, inclusive na última posição', () => {
+    expect(dividirPorPesos(centavos(1000), [0, 1])).toEqual([0, 1000]);
+    expect(dividirPorPesos(centavos(1000), [1, 0])).toEqual([1000, 0]);
+  });
+
+  it('T-0.2-12: um peso só fica com o total', () => {
+    expect(dividirPorPesos(centavos(100001), [7])).toEqual([100001]);
+  });
+
+  it('T-0.2-12: total zero dá partes zero', () => {
+    expect(dividirPorPesos(centavos(0), [9800, 6750])).toEqual([0, 0]);
+  });
+
+  it('T-0.2-12: negativo é o espelho do positivo, sem −0', () => {
+    expect(dividirPorPesos(centavos(-1500000), [9800, 6750])).toEqual([-888217, -611783]);
+    // Positivo: [0, 1]. O espelho é [0, −1], e não [−0, −1].
+    expect(dividirPorPesos(centavos(-1), [1, 1])).toEqual([0, -1]);
+  });
+
+  // Em ponto flutuante, MAX_SAFE_INTEGER × 2 ÷ 3 dá 6004799503160661; o exato é …660.
+  it('T-0.2-12: conta exata, sem ponto flutuante, com o total no limite seguro', () => {
+    const total = centavos(Number.MAX_SAFE_INTEGER);
+    expect(dividirPorPesos(total, [2, 1])).toEqual([6004799503160660, 3002399751580331]);
+  });
+
+  it.each([
+    [[], 'lista vazia'],
+    [[1, -1, 2], 'peso negativo'],
+    [[1, 1.5], 'peso fracionário'],
+    [[0, 0], 'pesos somando zero'],
+    [[Number.NaN, 1], 'peso NaN'],
+  ])('T-0.2-12: pesos %j geram erro de validação (%s)', (pesos) => {
+    expect(() => dividirPorPesos(centavos(1000), pesos)).toThrow(ErroValidacao);
+    expect(() => dividirPorPesos(centavos(1000), pesos)).toThrow(
+      expect.objectContaining({ codigo: 'PESOS_INVALIDOS' }),
+    );
+  });
+});
+
+describe('dividir', () => {
+  it('T-0.2-01: dividir(R$ 1.000,01; 60/40)', () => {
+    expect(dividir(centavos(100001), [pct('60'), pct('40')])).toEqual([60000, 40001]);
+  });
+
+  it('T-0.2-05: dividir(R$ 1.000,00; 17,25 / 17,25 / 15,25 / 15,25 / 15,25 / 13,50 / 6,25)', () => {
+    const percentuais = ['17.25', '17.25', '15.25', '15.25', '15.25', '13.50', '6.25'].map((p) =>
+      pct(p),
+    );
+    expect(dividir(centavos(100000), percentuais)).toEqual([
+      17250, 17250, 15250, 15250, 15250, 13500, 6250,
+    ]);
+  });
+
+  it('T-0.2-06: dividir(−R$ 1.000,01; 60/40) é o espelho do estorno', () => {
+    expect(dividir(centavos(-100001), [pct('60'), pct('40')])).toEqual([-60000, -40001]);
+  });
+
+  it('T-0.2-06: o espelho normaliza −0 para 0', () => {
+    expect(dividir(centavos(-1), [pct('50'), pct('50')])).toEqual([0, -1]);
+  });
+
+  it('T-0.2-01: percentuais com 4 casas fecham no total', () => {
+    // 33,3333 + 33,3333 + 33,3334 = 100
+    const percentuais = [pct('33.3333'), pct('33.3333'), pct('33.3334')];
+    expect(dividir(centavos(100), percentuais)).toEqual([33, 33, 34]);
+  });
+
+  // Contraexemplo achado no 0.2: em float, 0,0249% × 1.000.000 dá 248,99999999999997, e não 249.
+  // A conversão de percentual em peso precisa ser feita no Decimal.
+  it('T-0.2-01: percentual que em float não vira peso inteiro (0,0249%)', () => {
+    const percentuais = [pct('0.0249'), pct('99.9751')];
+    expect(dividir(centavos(1000000), percentuais)).toEqual([249, 999751]);
+  });
+
+  it.each([
+    [['60', '39.99'], '99,99%'],
+    [['60', '40.01'], '100,01%'],
+    [[], 'lista vazia (0%)'],
+  ])('T-0.2-07: percentuais %j somando %s geram erro de validação', (textos) => {
+    const percentuais = textos.map((p) => pct(p));
+    expect(() => dividir(centavos(100001), percentuais)).toThrow(ErroValidacao);
+    expect(() => dividir(centavos(100001), percentuais)).toThrow(
+      expect.objectContaining({ codigo: 'PERCENTUAIS_NAO_FECHAM' }),
+    );
+  });
+});
