@@ -11,6 +11,10 @@ export default defineConfig(
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    rules: {
+      // Convenção do projeto: objeto é `interface`; `type` fica para uniões, tuplas e o resto.
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+    },
   },
   // Este próprio arquivo é JavaScript, fora do tsconfig: sem regras que dependem de tipos.
   { files: ['**/*.js'], extends: [tseslint.configs.disableTypeChecked] },
