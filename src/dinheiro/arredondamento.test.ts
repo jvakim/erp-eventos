@@ -18,10 +18,11 @@ describe('arredondarR2 (modo vigente)', () => {
     expect(arredondarR2(estorno)).toBe(-9278);
   });
 
-  // Decisão do 0.2: os dois modos existem; esta é a linha que diz qual vale.
-  // Trocar o modo (depois da conversa com o contador) muda esta conferência junto.
-  it('T-0.2-09: o modo vigente é o meio afastando de zero', () => {
-    expect(arredondarR2).toBe(arredondarMeioAfastandoDeZero);
+  // Decisão do 0.2 (09/11/2026): a R2 segue a ABNT NBR 5891, porque a reforma tributária
+  // ainda não definiu um padrão. Os dois modos existem; esta é a conferência de qual vale.
+  // Trocar o modo muda esta conferência junto.
+  it('T-0.2-09: o modo vigente é o meio para o par (NBR 5891)', () => {
+    expect(arredondarR2).toBe(arredondarMeioParaPar);
   });
 });
 

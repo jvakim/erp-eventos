@@ -28,11 +28,12 @@ export function arredondarMeioAfastandoDeZero(valor: Decimal): Centavos {
 //      o anterior sobe um (9276,6 → 9277; 9276,5001 → 9277);
 //   3. é exatamente 5 (seguido só de zeros, ou de nada): o anterior sobe se for ímpar
 //      e fica se for par (9277,5 → 9278; 9276,5 → 9276; −9276,5 → −9276).
-// Regras escritas pelo que a norma costuma citar; confirmar o texto com o contador (0.2).
+// Regras escritas pelo que a norma costuma citar; conferir com o texto oficial da ABNT.
 export function arredondarMeioParaPar(valor: Decimal): Centavos {
   return arredondarNoModo(valor, Decimal.ROUND_HALF_EVEN);
 }
 
-// Modo vigente da R2. Trocar o modo é trocar o nome nesta linha (e a conferência no teste).
-// Pendência do plano: confirmar o modo com o contador antes de fechar o 0.2.
-export const arredondarR2 = arredondarMeioAfastandoDeZero;
+// Modo vigente da R2: ABNT NBR 5891 (meio para o par), decidido no 0.2 porque a reforma
+// tributária ainda não definiu um padrão. Trocar o modo é trocar o nome nesta linha
+// (e a conferência no teste).
+export const arredondarR2 = arredondarMeioParaPar;
